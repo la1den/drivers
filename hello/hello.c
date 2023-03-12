@@ -1,15 +1,15 @@
 #include <linux/init.h>
 #include <linux/module.h>
-/* #include <asm.current.h> */
-/* #include <linux/sched.h> */
+#include <asm/current.h>
+#include <linux/sched.h>
 
 MODULE_LICENSE("Dual BSD/GPL");
 
 static int hello_init(void)
 {
 	printk(KERN_ALERT "Hello, world\n");
-   /* printk(KERN_INFO "The process is \"%s\" (pid %i)\n", */ 
-   /*         current->comm, current->pid); */
+   printk(KERN_INFO "The process is \"%s\" (pid %i)\n", 
+           current->comm, current->pid);
 	return 0;
 }
 
