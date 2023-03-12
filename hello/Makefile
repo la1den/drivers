@@ -1,14 +1,14 @@
-# ifneq ($(KERNELRELEASE),)
+ifneq ($(KERNELRELEASE),)
 # # call from kernel build system
 
 obj-m	:= hello.o
 
-# else
+else
 
-# KERNELDIR ?= /lib/modules/2.6.10/build
-# PWD       := $(shell pwd)
+KERNELDIR ?= /lib/modules/2.6.10/build
+PWD       := $(shell pwd)
 
-# default:
-# 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+default:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
-# endif
+endif
