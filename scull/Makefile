@@ -1,14 +1,16 @@
-ifneq ($(KERNELRELEASE),)
-# call from kernel build system
+ifneq ($(strip $(KERNELRELEASE)),)
+# # call from kernel build system
 
-obj-m	:= hello.o
+obj-m	:= scull.o
+scull-objs := main.o 
 
 else
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
 
-default:
+modules:
+	echo "$(KERNELRELEASE)"
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 endif
