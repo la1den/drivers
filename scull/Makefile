@@ -10,7 +10,6 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
 
 modules:
-	echo "$(KERNELRELEASE)"
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 endif
