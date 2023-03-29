@@ -17,6 +17,9 @@
 /* for cdev */
 #include <linux/cdev.h>
 
+
+#include <asm/uaccess.h>	/* copy_*_user */
+
 #include "scull.h"		/* local definitions */
 
 
@@ -31,6 +34,8 @@ module_param(scull_major, int, S_IRUGO);
 MODULE_AUTHOR("Liu Feihong");
 MODULE_LICENSE("Dual BSD/GPL");
 
+
+struct scull_dev *scull_devices;	/* allocated in scull_init_module */
 
 int scull_trim(struct scull_dev *dev)
 {
@@ -86,6 +91,34 @@ struct file_operations scull_fops = {
 	.release =  scull_release,
 };
 
+/*
+ * Follow the list
+ */
+struct scull_qset *scull_follow(struct scull_dev *dev, int n)
+{
+	struct scull_qset *qs = dev->data;
+
+        /* Allocate first qset explicitly if need be */
+	if (! qs) {
+		qs = dev->data = kmalloc(sizeof(struct scull_qset), GFP_KERNEL);
+		if (qs == NULL)
+			return NULL;  /* Never mind */
+		memset(qs, 0, sizeof(struct scull_qset));
+	}
+
+	/* Then follow the list */
+	while (n--) {
+		if (!qs->next) {
+			qs->next = kmalloc(sizeof(struct scull_qset), GFP_KERNEL);
+			if (qs->next == NULL)
+				return NULL;  /* Never mind */
+			memset(qs->next, 0, sizeof(struct scull_qset));
+		}
+		qs = qs->next;
+		continue;
+	}
+	return qs;
+}
 
 /*
  * Data management: read and write
@@ -188,6 +221,13 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 	return retval;
 }
 
+void __exit scull_cleanup_module(void) {
+
+	dev_t devno = MKDEV(scull_major, scull_minor);
+
+	unregister_chrdev_region(devno, scull_nr_devs);
+
+}
 /*
  * Set up the char_dev structure for this device.
  */
@@ -204,37 +244,9 @@ static void scull_setup_cdev(struct scull_dev *dev, int index)
 		printk(KERN_NOTICE "Error %d adding scull%d", err, index);
 }
 
-/*
- * Follow the list
- */
-struct scull_qset *scull_follow(struct scull_dev *dev, int n)
-{
-	struct scull_qset *qs = dev->data;
-
-        /* Allocate first qset explicitly if need be */
-	if (! qs) {
-		qs = dev->data = kmalloc(sizeof(struct scull_qset), GFP_KERNEL);
-		if (qs == NULL)
-			return NULL;  /* Never mind */
-		memset(qs, 0, sizeof(struct scull_qset));
-	}
-
-	/* Then follow the list */
-	while (n--) {
-		if (!qs->next) {
-			qs->next = kmalloc(sizeof(struct scull_qset), GFP_KERNEL);
-			if (qs->next == NULL)
-				return NULL;  /* Never mind */
-			memset(qs->next, 0, sizeof(struct scull_qset));
-		}
-		qs = qs->next;
-		continue;
-	}
-	return qs;
-}
 
 int __init scull_init_module(void) {
-    int result;
+    int result, i;
     dev_t dev = 0;
 
 	if (scull_major) {
@@ -250,17 +262,36 @@ int __init scull_init_module(void) {
 		return result;
 	}
 
+	scull_devices = kmalloc(scull_nr_devs * sizeof(struct scull_dev), GFP_KERNEL);
+	if (!scull_devices) {
+		result = -ENOMEM;
+		goto fail;  /* Make this more graceful */
+	}
+	memset(scull_devices, 0, scull_nr_devs * sizeof(struct scull_dev));
+
+        /* Initialize each device. */
+	for (i = 0; i < scull_nr_devs; i++) {
+		scull_devices[i].quantum = scull_quantum;
+		scull_devices[i].qset = scull_qset;
+		init_MUTEX(&scull_devices[i].sem);
+		scull_setup_cdev(&scull_devices[i], i);
+	}
+
+        /* At this point call the init function for any friend device */
+	/* dev = MKDEV(scull_major, scull_minor + scull_nr_devs); */
+	/* dev += scull_p_init(dev); */
+	/* dev += scull_access_init(dev); */
+
+
+	return 0; /* succeed */
+
+  fail:
+	scull_cleanup_module();
+	return result;
     return 0;
 }
 
 
-void __exit scull_cleanup_module(void) {
-
-	dev_t devno = MKDEV(scull_major, scull_minor);
-
-	unregister_chrdev_region(devno, scull_nr_devs);
-
-}
 
 module_init(scull_init_module);
 module_exit(scull_cleanup_module);
