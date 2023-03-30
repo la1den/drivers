@@ -225,6 +225,14 @@ void __exit scull_cleanup_module(void) {
 
 	dev_t devno = MKDEV(scull_major, scull_minor);
 
+	if (scull_devices) {
+		for (i = 0; i < scull_nr_devs; i++) {
+			scull_trim(scull_devices + i);
+			cdev_del(&scull_devices[i].cdev);
+		}
+		kfree(scull_devices);
+	}
+
 	unregister_chrdev_region(devno, scull_nr_devs);
 
 }
