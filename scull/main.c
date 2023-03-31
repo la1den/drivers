@@ -223,6 +223,7 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 
 void __exit scull_cleanup_module(void) {
 
+	int i;
 	dev_t devno = MKDEV(scull_major, scull_minor);
 
 	if (scull_devices) {
