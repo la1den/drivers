@@ -1,0 +1,9 @@
+#!/bin/sh
+
+module="hellop"
+device="hellop"
+mode="664"
+
+
+# call insmod with all arguments passed into the script 
+/sbin/insmod ./$module.ko $* || exit 1
