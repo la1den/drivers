@@ -223,6 +223,7 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 
 void __exit scull_cleanup_module(void) {
 
+   PDEBUG("Enter scull_cleanup_module\n"); 
 	int i;
 	dev_t devno = MKDEV(scull_major, scull_minor);
 
@@ -255,6 +256,8 @@ static void scull_setup_cdev(struct scull_dev *dev, int index)
 
 
 int __init scull_init_module(void) {
+
+   PDEBUG("Enter scull_init_module\n"); 
     int result, i;
     dev_t dev = 0;
 

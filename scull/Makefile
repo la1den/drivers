@@ -1,3 +1,12 @@
+# Add your debugging flag (or not) to CFLAGS
+ifeq ($(DEBUG),y)
+  DEBFLAGS = -O -g -DSCULL_DEBUG # "-O" is needed to expand inlines
+else
+  DEBFLAGS = -O2
+endif
+
+CFLAGS += $(DEBFLAGS)
+
 ifneq ($(strip $(KERNELRELEASE)),)
 # # call from kernel build system
 
